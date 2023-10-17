@@ -5,8 +5,9 @@ import Loader from "./Loader";
 import Error from "./Error";
 import StartScrren from "./StartScrren";
 import Question from "./Question";
-import { act } from "react-dom/test-utils";
 import EndScreen from "./EndScreen";
+import Timer from "./Timer";
+const SECOND_PER_QUESTION = 30;
 export default function App() {
   const initinalState = {
     questions: [],
@@ -16,6 +17,7 @@ export default function App() {
     answers: [],
     points: 0,
     hightScore: 0,
+    secondRemaining: 0,
   };
   function reducer(state, action) {
     const reducerObj = {
@@ -26,7 +28,11 @@ export default function App() {
         userAnswer: {},
       },
       dataFiled: { ...state, status: "error" },
-      start: { ...state, status: "active" },
+      start: {
+        ...state,
+        status: "active",
+        secondRemaining: state.questions.length * SECOND_PER_QUESTION,
+      },
       user: {
         ...state,
         answer: action.payload,
@@ -55,6 +61,11 @@ export default function App() {
         points: 0,
         status: "ready",
       },
+      time: {
+        ...state,
+        secondRemaining: state.secondRemaining - 1,
+        status: state.secondRemaining === 0 ? "quizFinish" : state.status,
+      },
     };
 
     // const questionPoint = state?.questions[state.index]?.points;
@@ -62,10 +73,10 @@ export default function App() {
     // console.log({ correct });
     return reducerObj[action.type];
   }
-  const [{ questions, status, index, answer, points }, dispatch] = useReducer(
-    reducer,
-    initinalState
-  );
+  const [
+    { questions, status, index, answer, points, secondRemaining },
+    dispatch,
+  ] = useReducer(reducer, initinalState);
   // console.log({ points });
   const numQuestions = questions?.length;
   const maxPointPossible = questions?.reduce((prev, curr) => {
@@ -93,15 +104,19 @@ export default function App() {
           <StartScrren numQuestions={numQuestions} dispatch={dispatch} />
         )}
         {status === "active" && (
-          <Question
-            question={questions[index]}
-            dispatch={dispatch}
-            answer={answer}
-            numQuestions={numQuestions}
-            index={index}
-            maxPointPossible={maxPointPossible}
-            point={points}
-          />
+          <>
+            {" "}
+            <Question
+              question={questions[index]}
+              dispatch={dispatch}
+              answer={answer}
+              numQuestions={numQuestions}
+              index={index}
+              maxPointPossible={maxPointPossible}
+              point={points}
+            />
+            <Timer dispatch={dispatch} secondRemaining={secondRemaining} />
+          </>
         )}
         {status === "quizFinish" && (
           <EndScreen
